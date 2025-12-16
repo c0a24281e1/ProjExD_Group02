@@ -16,6 +16,9 @@ class Unit:
         self.hp = hp
         self.attack_power = attack
         self.defense_power = defense
+        self.xp = 0
+        self.level = 1
+        self.nextlevel = self.level * 100
 
     def is_alive(self):
         """生きているかどうかの判定"""
@@ -40,6 +43,75 @@ class Unit:
 
         # ログ用のメッセージを作成して返す
         return f"{self.name}の攻撃！ {target.name}に {damage} のダメージ！"
+    
+    def check_level(self, amount):
+        """
+        レベルが上がるかどうか判定する
+        :param amount: 入手した経験値
+        """
+        self.xp += amount
+        messages = [f"{self.name}は経験値{amount}を獲得した！"]
+        while self.xp >= self.nextlevel:
+            if self.level >= 99:
+                self.xp = self.nextlevel - 1
+                break
+            self.xp -= self.nextlevel
+            self.level += 1
+            self.max_hp += 10
+            self.hp = self.max_hp
+            self.attack_power += 3
+            self.defense_power += 2
+
+            self.nextlevel = self.level * 100
+            messages.append(f"{self.name}はレベル{self.level}に上がった！")
+        return messages 
+
+
+def draw_xp_bar(surface, unit, x, y, bar_width=200, bar_height=10):
+    if unit.nextlevel == 0 or unit.level >= 99:
+        ratio = 1.0
+    else:
+        ratio = unit.xp / unit.nextlevel
+    
+    xp_color = (150, 150, 255)
+
+    background_rect = pygame.Rect(x, y, bar_width, bar_height)
+    pygame.draw.rect(surface, WHITE, background_rect, 1)
+
+    current_width = int(bar_width * ratio)
+    xp_rect = pygame.Rect(x, y, current_width, bar_height)
+    pygame.draw.rect(surface, xp_color, xp_rect)
+
+
+def draw_health_bar(surface, unit, x, y, bar_width=200, bar_height=20):
+    """
+    指定されたUnitのHPバーを描画する関数
+    
+    surface: 描画先のPygame Surface (screen)
+    unit: HPを持つUnitオブジェクト
+    x: バーの左上X座標
+    y: バーの左上Y座標
+    bar_width: バーの全体の幅
+    bar_height: バーの高さ
+    """
+    
+    # HPの割合を計算
+    ratio = unit.hp / unit.max_hp
+    
+    # 描画色を決定（勇者は緑、魔王は赤など）
+    if unit.name == "勇者":
+        bar_color = (0, 255, 0) 
+    else:
+        bar_color = RED         
+
+    # 1. バーの背景（全体）を描画
+    background_rect = pygame.Rect(x, y, bar_width, bar_height)
+    pygame.draw.rect(surface, WHITE, background_rect, 1) # 白い枠線
+    
+    # 2. 現在のHPに応じたバー（中身）を描画
+    current_width = int(bar_width * ratio)  
+    hp_rect = pygame.Rect(x, y, current_width, bar_height)
+    pygame.draw.rect(surface, bar_color, hp_rect)
 
 # --- 2. Pygame初期化 ---
 pygame.init()
@@ -59,6 +131,7 @@ battle_logs = ["スペースキーを押してバトル開始！"]
 
 turn = "PLAYER" # どちらのターンか
 game_over = False
+
 
 # --- 4. メインループ ---
 running = True
@@ -82,6 +155,8 @@ while running:
                     
                     if not demon.is_alive():
                         battle_logs.append("魔王を倒した！")
+                        xp_messages = hero.check_level(200)
+                        battle_logs.extend(xp_messages)
                         game_over = True
                     else:
                         turn = "ENEMY" # 相手のターンへ
@@ -107,6 +182,9 @@ while running:
     demon_text = font.render(f"{demon.name} HP: {demon.hp}/{demon.max_hp}", True, RED)
     screen.blit(hero_text, (50, 50))
     screen.blit(demon_text, (400, 50))
+    draw_health_bar(screen, hero, 50, 80)
+    draw_health_bar(screen, demon, 400, 80)
+    draw_xp_bar(screen, hero, 50, 100)
 
     # 2. ログの表示（最新の5行だけ表示する）
     # リストの後ろから5つを取得して表示
