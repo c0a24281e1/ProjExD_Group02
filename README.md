@@ -1,4 +1,4 @@
-#工科幻戦記
+# 工科幻戦記
 
 ![title](fig/screen_shot.png)
 
