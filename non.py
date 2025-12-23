@@ -278,8 +278,9 @@ for file_name in bg_file_names:
 # --- 3. ゲーム管理変数 ---
 hero = Unit(name="勇者", hp=100, attack=30, defense=10)
 demon = None
-demon_sprite = BattleSprite("images/go-remu.png", 400, 120)  # 敵のインスタンス生成
+enemies = ["images/slime.png", "images/goburin.png", "images/kimera.png", "images/go-remu.png", "images/maou.png"]
 hero_sprite = BattleSprite("images/hero.png", 50, 120)  # 勇者のインスタンス生成
+demon_sprite = BattleSprite(enemies[0], 400, 120)  # 敵のインスタンス生成
 slash_effect = AttackEffect("images/slash.png", 380, 180)  # 勇者の攻撃エフェクトのインスタンス生成
 slash2_effect = AttackEffect("images/slash2.png", 130, 180)  # 敵の攻撃エフェクトのインスタンス生成
 battle_logs = []
@@ -333,12 +334,24 @@ while running:
         if event.type == pygame.KEYDOWN:
             # --- ステージ選択モード ---
             if mode == 'SELECT':
-                if event.key == pygame.K_1: init_battle(1)
-                elif event.key == pygame.K_2: init_battle(2)
-                elif event.key == pygame.K_3: init_battle(3)
-                elif event.key == pygame.K_4: init_battle(4)
-                elif event.key == pygame.K_5: init_battle(5)
-            
+                if event.key == pygame.K_1:
+                    init_battle(1)
+                    em_num = 0
+                elif event.key == pygame.K_2:
+                    init_battle(2)
+                    em_num = 1
+                elif event.key == pygame.K_3:
+                    init_battle(3)
+                    em_num = 2
+                elif event.key == pygame.K_4:
+                    init_battle(4)
+                    em_num = 3
+                elif event.key == pygame.K_5:
+                    init_battle(5)
+                    em_num = 4
+                demon_sprite = BattleSprite(enemies[em_num], 400, 120)  # 敵のインスタンス生成
+
+
             # --- バトルモード ---
             elif mode == 'BATTLE':
                 if not game_over:
@@ -412,8 +425,7 @@ while running:
                     # 敵の攻撃後の勇者の生存判定
                     if not hero.is_alive():
                         battle_logs.append("勇者は力尽きた...")
-                        game_over = True
-                        mode = game_over
+                        mode = "gameover"
                     else:
                         turn = "PLAYER" 
 
@@ -431,6 +443,7 @@ while running:
                     slash_effect.timer = 0
                     slash2_effect.visible = False
                     slash2_effect.timer = 0
+                    continue
                 except Exception:
                     pass
 
@@ -488,8 +501,11 @@ while running:
         draw_xp_bar(screen, hero, 50, 100)
         
         # 1. 操作ガイド
+        manual_rect = pygame.Rect(50, 240, 540, 40)
+        pygame.draw.rect(screen, BLACK, manual_rect)
         guide_text = font.render("[A]: 攻撃 | [H]: 回復 | [D]: 防御 | [R]: 逃げる", True, BLUE_GUIDE)
-        screen.blit(guide_text, (50, 250))
+        screen.blit(guide_text, (80, 250))
+        
         
         # ログウィンドウ
         win_rect = pygame.Rect(50, 300, 540, 150)
@@ -507,6 +523,8 @@ while running:
         screen.blit(txt, (txt.get_rect(center=(320, 200))))
         screen.blit(sub, (sub.get_rect(center=(320, 280))))
 
+    
+    
     # 2. ログの表示
     recent_logs = battle_logs[-5:] 
 
@@ -522,10 +540,12 @@ while running:
 
     pygame.display.flip()
     clock.tick(30)
-
+    
     if mode == 'gameover':
         time.sleep(2)
         break
+
+    
 
 pygame.quit()
 sys.exit()
